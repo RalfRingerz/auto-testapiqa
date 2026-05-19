@@ -74,7 +74,6 @@ rm -rf allure-results
 Allure после прогона: `allure serve allure-results` (для просмотра нужна установленная CLI allure). Очистка результатов отчёта: `rm -rf allure-results`.
 
 В GitLab на ветке `master` джоба `pages` собирает статический Allure из артефактов `api-tests` и `ui-tests` и выкладывает как Pages (см. `.gitlab-ci.yml`).
-# TODO поднять хост для крассивой презентации Allure отчёта / развернуть отчётность с историей прогонов  на GitHub Pages
 
 ## CI:
 
