@@ -1,0 +1,67 @@
+stages:
+  - lint
+  - test
+  - report
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+default:
+  image: python:3.11-slim
+  before_script:
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+
+lint:
+  stage: lint
+  script:
+    - ruff check .
+    - mypy --ignore-missing-imports pages/ fixtures/
+  allow_failure: false
+
+api-tests:
+  stage: test
+  script:
+    - pytest tests/api/ -v --alluredir=allure-results -m "smoke or regression"
+  artifacts:
+    when: always
+    paths:
+      - allure-results/
+    expire_in: 1 week
+
+ui-tests:
+  stage: test
+  image: mcr.microsoft.com/playwright/python:v1.49.1-jammy
+  before_script:
+    - pip install -r requirements.txt
+    - playwright install chromium
+  script:
+    - pytest tests/ui/ -v --alluredir=allure-results -m "smoke"
+  artifacts:
+    when: always
+    paths:
+      - allure-results/
+    expire_in: 1 week
+
+pages:
+  stage: report
+  image: openjdk:11-jre-slim
+  before_script:
+    - apt-get update && apt-get install -y wget
+    - wget -O allure.tgz https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.27.0/allure-commandline-2.27.0.tgz
+    - tar -xzf allure.tgz
+  script:
+    - ./allure-2.27.0/bin/allure generate allure-results -o public --clean
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
+  dependencies:
+    - api-tests
+    - ui-tests
